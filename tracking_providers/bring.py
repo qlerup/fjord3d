@@ -159,7 +159,7 @@ def _fetch_bring_api_tracking(
             params={"q": number, "lang": "da"},
             headers={
                 "Accept": "application/json",
-                "User-Agent": "fjordshare-tracking/1.0",
+                "User-Agent": "fjord3d-tracking/1.0",
                 "api-version": "2",
                 "X-Mybring-API-Uid": uid,
                 "X-Mybring-API-Key": api_key,
@@ -195,7 +195,7 @@ def _client_url(client_url: str) -> str:
     value = str(client_url or os.getenv("BRING_CLIENT_URL", "") or "").strip()
     if value:
         return value
-    return "https://fjordshare.local/"
+    return "https://fjord3d.local/"
 
 
 def _parse_bring_api_payload(payload: dict[str, Any], number: str) -> TrackingLookupResult:
@@ -367,7 +367,7 @@ def _fetch_bring_public_tracking(number: str, timeout: int) -> TrackingLookupRes
             _tracking_url(number),
             headers={
                 "Accept": "text/html,application/xhtml+xml",
-                "User-Agent": "fjordshare-tracking/1.0",
+                "User-Agent": "fjord3d-tracking/1.0",
             },
             timeout=timeout,
         )

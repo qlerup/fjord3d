@@ -2,7 +2,7 @@
   "use strict";
 
   const SUPPORTED_LANGS = new Set(["da", "en", "fr"]);
-  const STORAGE_KEY = "fjordshare.language.v1";
+  const STORAGE_KEY = "fjord3d.language.v1";
   const script = document.currentScript || null;
   const textState = new WeakMap();
   const titleSource = document.title || "";
@@ -850,7 +850,7 @@
     startObserver();
   }
 
-  window.FjordShareI18n = {
+  window.Fjord3DI18n = {
     apply,
     normalizeLang,
     setLanguage(lang, options = {}) {

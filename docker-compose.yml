@@ -1,10 +1,11 @@
-﻿services:
-  fjordshare:
+name: fjord3d
+services:
+  fjord3d:
     build:
       context: .
       args:
         BAMBUSTUDIO_APPIMAGE_URL: ${BAMBUSTUDIO_APPIMAGE_URL:-https://github.com/bambulab/BambuStudio/releases/download/v02.06.00.51/BambuStudio_ubuntu-22.04-v02.06.00.51-20260417160415.AppImage}
-    container_name: fjordshare
+    container_name: fjord3d
     ports:
       - "${APP_PORT:-9090}:8080"
     extra_hosts:
@@ -57,12 +58,12 @@
       REMEMBER_COOKIE_SECURE: ${REMEMBER_COOKIE_SECURE:-0}
       HSTS_ENABLED: ${HSTS_ENABLED:-0}
       FJORDHUB_URL: ${FJORDHUB_URL:-}
-      FJORDHUB_APP_ID: ${FJORDHUB_APP_ID:-fjordshare}
+      FJORDHUB_APP_ID: ${FJORDHUB_APP_ID:-fjord3d}
       FJORDHUB_API_KEY: ${FJORDHUB_API_KEY:-}
     volumes:
-      - "${DATA_DIR:-/opt/fjordshare-data/appdata}:/data"
-      - "${UPLOADS_HOST_DIR:-/opt/fjordshare-data/uploads}:/uploads"
-      - "${THUMBS_HOST_DIR:-/opt/fjordshare-data/thumbs}:/thumbs"
+      - "${DATA_DIR:-/opt/fjord3d-data/appdata}:/data"
+      - "${UPLOADS_HOST_DIR:-/opt/fjord3d-data/uploads}:/uploads"
+      - "${THUMBS_HOST_DIR:-/opt/fjord3d-data/thumbs}:/thumbs"
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request, sys; urllib.request.urlopen('http://127.0.0.1:8080/api/health')"]
       interval: 10s

@@ -3,7 +3,7 @@
 
   const boot = document.getElementById("trackingShareBootstrap");
   const token = String((boot && boot.dataset.token) || "").trim();
-  const LANGUAGE_STORAGE_KEY = "fjordshare.trackingShare.lang.v1";
+  const LANGUAGE_STORAGE_KEY = "fjord3d.trackingShare.lang.v1";
   const SUPPORTED_LANGS = ["da", "en", "fr"];
   const LANG_LOCALES = {
     da: "da-DK",

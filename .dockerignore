@@ -1,5 +1,7 @@
 .git
 .env
+.env.before-fjord3d
+.env.bak.*
 .venv
 __pycache__/
 *.py[cod]

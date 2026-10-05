@@ -11,7 +11,7 @@
   const SMS_ONBOARDING_LOGIN_PROMPT_ENABLED = false;
   const APP_ONBOARDING_FALLBACK_STEP_MS = 5000;
   const APP_ONBOARDING_STEP_BUFFER_MS = 450;
-  const UNSEEN_UPLOADS_OVERLAY_EXPANDED_STORAGE_KEY = "fjordshare.unseenUploadsOverlayExpanded.v1";
+  const UNSEEN_UPLOADS_OVERLAY_EXPANDED_STORAGE_KEY = "fjord3d.unseenUploadsOverlayExpanded.v1";
   const UNSEEN_UPLOADS_PAGE_SIZE = 24;
   const MAPPER_SEARCH_DEBOUNCE_MS = 1000;
   const PRESUPPORTED_SORT_FOLDER_NAME = "Presupported";
@@ -1021,8 +1021,8 @@
       } catch (_err) {
         // Ignore DOM update errors.
       }
-      if (window.FjordShareI18n && typeof window.FjordShareI18n.setLanguage === "function") {
-        window.FjordShareI18n.setLanguage(language);
+      if (window.Fjord3DI18n && typeof window.Fjord3DI18n.setLanguage === "function") {
+        window.Fjord3DI18n.setLanguage(language);
       }
     }
 

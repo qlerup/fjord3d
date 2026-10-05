@@ -302,11 +302,11 @@ COPY . .
 RUN mkdir -p /app/static/vendor \
     && python3 -c "import urllib.request; urllib.request.urlretrieve('https://cdn.jsdelivr.net/npm/tus-js-client@${TUS_JS_VERSION}/dist/tus.min.js', '/app/static/vendor/tus.min.js')"
 
-RUN groupadd --gid 1001 fjordshare \
-    && useradd --uid 1001 --gid fjordshare --shell /bin/sh --no-create-home fjordshare \
-    && chown -R fjordshare:fjordshare /app
+RUN groupadd --gid 1001 fjord3d \
+    && useradd --uid 1001 --gid fjord3d --shell /bin/sh --no-create-home fjord3d \
+    && chown -R fjord3d:fjord3d /app
 
-USER fjordshare
+USER fjord3d
 
 EXPOSE 8080
 

@@ -1,4 +1,5 @@
 .env
+.env.before-fjord3d
 .env.bak.*
 data/
 __pycache__/

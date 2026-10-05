@@ -141,7 +141,7 @@ def fetch_coolrunner_tracking(
             COOLRUNNER_API_URL.format(tracking_number=urllib_parse.quote(number, safe="")),
             headers={
                 "Accept": "application/json",
-                "User-Agent": "fjordshare-tracking/1.0",
+                "User-Agent": "fjord3d-tracking/1.0",
             },
             timeout=timeout_seconds,
         )

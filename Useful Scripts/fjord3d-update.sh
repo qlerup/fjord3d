@@ -10,11 +10,11 @@ if [ -z "${APP_DIR:-}" ]; then
 	elif [ -f "./docker-compose.yml" ]; then
 		APP_DIR="$(pwd)"
 	else
-		APP_DIR="/opt/fjordshare"
+		APP_DIR="/opt/fjord3d"
 	fi
 fi
 
-SERVICE_NAME="${SERVICE_NAME:-fjordshare}"
+SERVICE_NAME="${SERVICE_NAME:-fjord3d}"
 REPO_BRANCH="${REPO_BRANCH:-}"
 WAIT_TIMEOUT_SEC="${WAIT_TIMEOUT_SEC:-180}"
 WAIT_INTERVAL_SEC="${WAIT_INTERVAL_SEC:-2}"
@@ -30,15 +30,15 @@ usage() {
 	cat <<EOF
 Usage: $0 [options]
 
-Normal FjordShare update:
-  - backs up .env and fjordshare.db when possible
+Normal Fjord3D update:
+  - backs up .env and fjord3d.db when possible
   - pulls the current Git branch with --ff-only
   - asks whether to run optional Docker cleanup
   - runs docker compose up -d --build
   - waits for /api/health
 
 Options:
-  --app-dir DIR        FjordShare app directory (default: auto, then /opt/fjordshare)
+  --app-dir DIR        Fjord3D app directory (default: auto, then /opt/fjord3d)
   --branch BRANCH     Git branch to pull (default: current branch, then main)
   --no-build          Do not build image; only docker compose up -d
   --no-cache          Rebuild image without Docker cache
@@ -288,13 +288,13 @@ ensure_makerworld_credentials_encryption_key() {
 }
 
 backup_env_file() {
-	data_dir="${DATA_DIR:-$(read_env_value DATA_DIR || printf '%s' '/opt/fjordshare-data/appdata')}"
+	data_dir="${DATA_DIR:-$(read_env_value DATA_DIR || printf '%s' '/opt/fjord3d-data/appdata')}"
 	backup_dir="$data_dir/backups"
 	if [ ! -f "$APP_DIR/.env" ]; then
 		return 0
 	fi
 	if mkdir -p "$backup_dir" 2>/dev/null; then
-		backup_path="$backup_dir/fjordshare.env.$TS.bak"
+		backup_path="$backup_dir/fjord3d.env.$TS.bak"
 		cp -p "$APP_DIR/.env" "$backup_path"
 		echo "==> .env backup: $backup_path"
 	else
@@ -317,8 +317,10 @@ python - <<PY
 import os
 import sqlite3
 
-src = "/data/fjordshare.db"
-dst = "/data/backups/fjordshare.db.$TS.bak"
+src = "/data/fjord3d.db"
+if not os.path.exists(src):
+    src = "/data/fjordshare.db"
+dst = "/data/backups/fjord3d.db.$TS.bak"
 if not os.path.exists(src):
     print("Ingen database at backupe endnu")
     raise SystemExit(0)
@@ -337,15 +339,16 @@ EOF
 }
 
 backup_database_from_host() {
-	data_dir="${DATA_DIR:-$(read_env_value DATA_DIR || printf '%s' '/opt/fjordshare-data/appdata')}"
-	db_path="$data_dir/fjordshare.db"
+	data_dir="${DATA_DIR:-$(read_env_value DATA_DIR || printf '%s' '/opt/fjord3d-data/appdata')}"
+	db_path="$data_dir/fjord3d.db"
+	if [ ! -f "$db_path" ] && [ -f "$data_dir/fjordshare.db" ]; then db_path="$data_dir/fjordshare.db"; fi
 	backup_dir="$data_dir/backups"
 	if [ ! -f "$db_path" ]; then
 		echo "==> Ingen database fundet til backup endnu: $db_path"
 		return 0
 	fi
 	mkdir -p "$backup_dir"
-	backup_path="$backup_dir/fjordshare.db.$TS.bak"
+	backup_path="$backup_dir/fjord3d.db.$TS.bak"
 	cp -p "$db_path" "$backup_path"
 	echo "==> Database backup: $backup_path"
 }
@@ -407,14 +410,14 @@ repair_host_dir_permissions() {
 }
 
 repair_data_permissions() {
-	repair_host_dir_permissions "appdata" "$(read_host_dir DATA_DIR '/opt/fjordshare-data/appdata')"
-	repair_host_dir_permissions "uploads" "$(read_host_dir UPLOADS_HOST_DIR '/opt/fjordshare-data/uploads')"
-	repair_host_dir_permissions "thumbs" "$(read_host_dir THUMBS_HOST_DIR '/opt/fjordshare-data/thumbs')"
+	repair_host_dir_permissions "appdata" "$(read_host_dir DATA_DIR '/opt/fjord3d-data/appdata')"
+	repair_host_dir_permissions "uploads" "$(read_host_dir UPLOADS_HOST_DIR '/opt/fjord3d-data/uploads')"
+	repair_host_dir_permissions "thumbs" "$(read_host_dir THUMBS_HOST_DIR '/opt/fjord3d-data/thumbs')"
 }
 
-wait_for_fjordshare() {
+wait_for_fjord3d() {
 	elapsed=0
-	echo "==> Venter paa FjordShare health (timeout ${WAIT_TIMEOUT_SEC}s)"
+	echo "==> Venter paa Fjord3D health (timeout ${WAIT_TIMEOUT_SEC}s)"
 	while [ "$elapsed" -lt "$WAIT_TIMEOUT_SEC" ]; do
 		container_id="$(docker_compose ps -q "$SERVICE_NAME" 2>/dev/null || true)"
 		if [ -n "$container_id" ]; then
@@ -422,12 +425,12 @@ wait_for_fjordshare() {
 			case "$state" in
 				healthy|running)
 					if docker_compose exec -T "$SERVICE_NAME" python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health')"; then
-						echo "==> FjordShare er klar"
+						echo "==> Fjord3D er klar"
 						return 0
 					fi
 					;;
 				unhealthy|exited|dead)
-					echo "Fejl: FjordShare status er $state under opstart."
+					echo "Fejl: Fjord3D status er $state under opstart."
 					docker_compose logs --tail=120 "$SERVICE_NAME" || true
 					return 1
 					;;
@@ -437,7 +440,7 @@ wait_for_fjordshare() {
 		elapsed=$((elapsed + WAIT_INTERVAL_SEC))
 	done
 
-	echo "Fejl: timeout mens FjordShare blev klar."
+	echo "Fejl: timeout mens Fjord3D blev klar."
 	docker_compose ps || true
 	docker_compose logs --tail=120 "$SERVICE_NAME" || true
 	return 1
@@ -472,7 +475,7 @@ docker_compose config >/dev/null
 
 if [ ! -d .git ]; then
 	echo "Fejl: $APP_DIR er ikke et git repository."
-	echo "Tip: kontroller APP_DIR, eller klon FjordShare repoet igen i denne mappe."
+	echo "Tip: kontroller APP_DIR, eller klon Fjord3D repoet igen i denne mappe."
 	exit 1
 fi
 
@@ -493,6 +496,8 @@ fi
 
 OLD_REV="$(git rev-parse HEAD 2>/dev/null || true)"
 
+python3 "$APP_DIR/scripts/migrate_identity.py" "$APP_DIR"
+
 backup_env_file
 ensure_sms_token_encryption_key
 ensure_makerworld_credentials_encryption_key
@@ -512,20 +517,32 @@ fi
 
 run_optional_cleanup
 
+LEGACY_3D=0
+if docker_cmd inspect fjordshare >/dev/null 2>&1; then
+    LEGACY_3D=1
+    docker_compose build "$SERVICE_NAME"
+    docker_cmd stop fjordshare
+    trap 'docker_cmd stop fjord3d >/dev/null 2>&1 || true; docker_cmd rm fjord3d >/dev/null 2>&1 || true; docker_cmd start fjordshare >/dev/null 2>&1 || true' EXIT
+fi
+
 if [ "$NO_CACHE" = "1" ]; then
 	echo "==> Bygger uden Docker cache"
 	docker_compose build --no-cache "$SERVICE_NAME"
-	echo "==> Starter FjordShare"
+	echo "==> Starter Fjord3D"
 	docker_compose up -d "$SERVICE_NAME"
 elif [ "$DO_BUILD" = "1" ]; then
-	echo "==> Bygger og starter FjordShare"
+	echo "==> Bygger og starter Fjord3D"
 	docker_compose up -d --build "$SERVICE_NAME"
 else
-	echo "==> Starter FjordShare uden build"
+	echo "==> Starter Fjord3D uden build"
 	docker_compose up -d "$SERVICE_NAME"
 fi
 
-wait_for_fjordshare
+wait_for_fjord3d
+if [ "$LEGACY_3D" = "1" ]; then
+    trap - EXIT
+    docker_cmd rm fjordshare
+fi
 
 echo "==> Status"
 docker_compose ps

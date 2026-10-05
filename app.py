@@ -103,8 +103,13 @@ THUMBS_DIR = Path(_THUMBS_DIR_ENV or str(DATA_DIR / "thumbs")).resolve()
 FILE_ATTACHMENTS_DIR = DATA_DIR / "file_attachments"
 PRINT_READY_PROJECT_UPLOADS_DIR = DATA_DIR / "print_ready_project_uploads"
 PRINT_READY_PROJECT_FILES_FOLDER_NAME = "Project files"
-DB_PATH = DATA_DIR / "fjordshare.db"
-INSTALL_STATE_PATH = DATA_DIR / "fjordshare.install.json"
+DB_PATH = DATA_DIR / "fjord3d.db"
+INSTALL_STATE_PATH = DATA_DIR / "fjord3d.install.json"
+# Existing data is authoritative; a rename must never open an empty library.
+if not DB_PATH.exists() and (DATA_DIR / "fjordshare.db").exists():
+    DB_PATH = DATA_DIR / "fjordshare.db"
+if not INSTALL_STATE_PATH.exists() and (DATA_DIR / "fjordshare.install.json").exists():
+    INSTALL_STATE_PATH = DATA_DIR / "fjordshare.install.json"
 INSTALL_STATE_LOCK = threading.Lock()
 SLICER_PROFILE_DIR = BAMBU_DIR / "profiles"
 BAMBU_SLICED_DIR = BAMBU_DIR / "sliced"
@@ -853,7 +858,7 @@ def _mark_install_initialized(reason: str = "unknown") -> None:
         if _install_state_exists():
             return
         payload = {
-            "app": "fjordshare",
+            "app": "fjord3d",
             "initialized": True,
             "initialized_at": now_iso(),
             "reason": str(reason or "unknown"),
@@ -874,7 +879,7 @@ def _ensure_install_state_for_existing_users() -> None:
 
 
 def _setup_locked_response():
-    message = "FjordShare er allerede initialiseret, men databasen mangler eller er tom."
+    message = "Fjord3D er allerede initialiseret, men databasen mangler eller er tom."
     if request.path.startswith("/api/"):
         return jsonify(
             {
@@ -885,7 +890,7 @@ def _setup_locked_response():
         ), 503
     return render_template(
         "setup_locked.html",
-        app_name="FjordShare",
+        app_name="Fjord3D",
         db_path=str(DB_PATH),
     ), 503
 
@@ -4873,10 +4878,10 @@ def _build_support_override_load_settings(
         or process_payload.get("setting_id")
         or process_payload.get("name")
         or print_profile
-        or "fjordshare-process"
+        or "fjord3d-process"
     ).strip()
     if not selected_process_name:
-        selected_process_name = "fjordshare-process"
+        selected_process_name = "fjord3d-process"
 
     resolved_payload, _resolved_chain = _resolve_effective_process_profile_payload(
         executable,
@@ -10265,7 +10270,7 @@ def _tracking_error_result(tracking_number: str, exc: Exception) -> TrackingLook
         tracking_number=str(tracking_number or ""),
         status="Fejl ved opdatering",
         tracking_url="",
-        source="fjordshare",
+        source="fjord3d",
         error=str(exc)[:260] or "Kunne ikke opdatere tracking",
     )
 
@@ -10363,7 +10368,7 @@ def _translate_tracking_share_text_via_google(text: str, target_lang: str) -> st
         method="GET",
         headers={
             "Accept": "application/json,text/plain,*/*",
-            "User-Agent": "fjordshare-tracking/1.0",
+            "User-Agent": "fjord3d-tracking/1.0",
         },
     )
     try:
@@ -14735,7 +14740,7 @@ MAKERWORLD_LICENSE_LABELS = {
     "PUBLIC_DOMAIN": "Public Domain",
 }
 PRINTABLES_PREVIEW_QUERY = """
-query FjordSharePrintablesPreview($id: ID!) {
+query Fjord3DPrintablesPreview($id: ID!) {
   print(id: $id) {
     id
     name
@@ -14783,7 +14788,7 @@ def _makerworld_fetch_design(design_id: int) -> dict[str, Any]:
         api_url,
         headers={
             "Accept": "application/json",
-            "User-Agent": "FjordShare/1.0 (+https://fjordshare.local)",
+            "User-Agent": "Fjord3D/1.0 (+https://fjord3d.local)",
         },
     )
     try:
@@ -15921,11 +15926,11 @@ if _SESSION_COOKIE_SAMESITE not in {"Lax", "Strict", "None"}:
     _SESSION_COOKIE_SAMESITE = "Lax"
 
 app.config.update(
-    SESSION_COOKIE_NAME=os.getenv("SESSION_COOKIE_NAME", "fjordshare_session"),
+    SESSION_COOKIE_NAME=os.getenv("SESSION_COOKIE_NAME", "fjord3d_session"),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE=_SESSION_COOKIE_SAMESITE,
     SESSION_COOKIE_SECURE=parse_bool(os.getenv("SESSION_COOKIE_SECURE", "0")),
-    REMEMBER_COOKIE_NAME=os.getenv("REMEMBER_COOKIE_NAME", "fjordshare_remember"),
+    REMEMBER_COOKIE_NAME=os.getenv("REMEMBER_COOKIE_NAME", "fjord3d_remember"),
     REMEMBER_COOKIE_HTTPONLY=True,
     REMEMBER_COOKIE_SAMESITE=_SESSION_COOKIE_SAMESITE,
     REMEMBER_COOKIE_SECURE=parse_bool(os.getenv("REMEMBER_COOKIE_SECURE", "0")),
@@ -16145,7 +16150,7 @@ def api_health():
     payload: Dict[str, Any] = {
         "ok": True,
         "db_ok": db_ok,
-        "service": "fjordshare",
+        "service": "fjord3d",
         "users": users_value,
         "data_dir": str(DATA_DIR),
         "upload_root": str(UPLOAD_ROOT),
@@ -16290,7 +16295,7 @@ def login():
                     session.pop(LOGIN_CSRF_SESSION_KEY, None)
                     login_user(user)
                     return redirect(url_for("index"))
-                error = "Forkert brugernavn/kode eller ingen adgang til FjordShare."
+                error = "Forkert brugernavn/kode eller ingen adgang til Fjord3D."
         return render_template("login.html", error=error, created=created, csrf_token=csrf_token)
     if users_count() == 0:
         if _install_state_exists():
@@ -21393,7 +21398,7 @@ def api_admin_users():
 
 _FJORDHUB_API_KEY = os.getenv("FJORDHUB_API_KEY", "")
 _FJORDHUB_URL = os.getenv("FJORDHUB_URL", "")
-_FJORDHUB_APP_ID = os.getenv("FJORDHUB_APP_ID", "fjordshare")
+_FJORDHUB_APP_ID = os.getenv("FJORDHUB_APP_ID", "fjord3d")
 
 
 def _fjordhub_managed() -> bool:

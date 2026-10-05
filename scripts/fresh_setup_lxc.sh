@@ -147,7 +147,7 @@ ensure_absolute_dir() {
 assert_writable() {
   path="$1"
   label="$2"
-  probe="${path}/.fjordshare_write_test.$$"
+  probe="${path}/.fjord3d_write_test.$$"
   if ! ( : > "$probe" ) 2>/dev/null; then
     echo "ERROR: ${label} is not writable: ${path}"
     exit 1
@@ -271,10 +271,10 @@ load_env_with_defaults() {
   fi
 
   : "${APP_PORT:=9090}"
-  : "${DATA_DIR:=/opt/fjordshare-data/appdata}"
-  : "${UPLOADS_HOST_DIR:=/opt/fjordshare-data/uploads}"
+  : "${DATA_DIR:=/opt/fjord3d-data/appdata}"
+  : "${UPLOADS_HOST_DIR:=/opt/fjord3d-data/uploads}"
   : "${TUS_TMP_DIR:=/uploads/.tus_uploads}"
-  : "${THUMBS_HOST_DIR:=/opt/fjordshare-data/thumbs}"
+  : "${THUMBS_HOST_DIR:=/opt/fjord3d-data/thumbs}"
   : "${TZ:=Europe/Copenhagen}"
   : "${THUMB_SIZE_PX:=480}"
   : "${THUMB_WORKER_COUNT:=1}"
@@ -302,8 +302,8 @@ load_env_with_defaults() {
   : "${EXPECT_UPLOADS_FSTYPES:=}"
   : "${EXPECT_THUMBS_FSTYPES:=}"
   : "${SETUP_NFS_UPLOADS_ENABLED:=0}"
-  : "${SETUP_NFS_EXPORT:=10.10.0.161:/volume1/ProxmoxFjordshare}"
-  : "${SETUP_NFS_MOUNT_ROOT:=${HOME:-/root}/synology/fjordshare-data}"
+  : "${SETUP_NFS_EXPORT:=10.10.0.161:/volume1/ProxmoxFjord3D}"
+  : "${SETUP_NFS_MOUNT_ROOT:=${HOME:-/root}/synology/fjord3d-data}"
   : "${SETUP_NFS_UPLOADS_SUBDIR:=uploads}"
   : "${SETUP_NFS_FSTAB_OPTIONS:=vers=3,_netdev,nofail}"
 }
@@ -430,14 +430,14 @@ step_2_uploads_target() {
   if ask_yes_no "Store uploaded files on NAS/NFS?" "$use_nas_default"; then
     if ask_yes_no "Is NAS path already mounted (Proxmox bind mount / existing mount)?" "$(is_truthy "$SETUP_NFS_UPLOADS_ENABLED" && echo n || echo y)"; then
       SETUP_NFS_UPLOADS_ENABLED="0"
-      UPLOADS_HOST_DIR="$(ask_input "UPLOADS_HOST_DIR (existing NAS path)" "$UPLOADS_HOST_DIR" "/mnt/fjordshare-nfs/uploads" "Absolute path that already points to your NAS share.")"
+      UPLOADS_HOST_DIR="$(ask_input "UPLOADS_HOST_DIR (existing NAS path)" "$UPLOADS_HOST_DIR" "/mnt/fjord3d-nfs/uploads" "Absolute path that already points to your NAS share.")"
       if [ -z "$EXPECT_UPLOADS_FSTYPES" ]; then
         EXPECT_UPLOADS_FSTYPES="nfs,nfs4,cifs,fuseblk"
       fi
     else
       SETUP_NFS_UPLOADS_ENABLED="1"
-      SETUP_NFS_EXPORT="$(ask_input "NFS export (server:/path)" "$SETUP_NFS_EXPORT" "10.10.0.161:/volume1/ProxmoxFjordshare" "Synology NFS share in server:/path format.")"
-      SETUP_NFS_MOUNT_ROOT="$(ask_input "Local NFS mount root" "$SETUP_NFS_MOUNT_ROOT" "/home/qlerup/synology/fjordshare-data" "Local mount root on host/LXC. Must be absolute.")"
+      SETUP_NFS_EXPORT="$(ask_input "NFS export (server:/path)" "$SETUP_NFS_EXPORT" "10.10.0.161:/volume1/ProxmoxFjord3D" "Synology NFS share in server:/path format.")"
+      SETUP_NFS_MOUNT_ROOT="$(ask_input "Local NFS mount root" "$SETUP_NFS_MOUNT_ROOT" "/home/qlerup/synology/fjord3d-data" "Local mount root on host/LXC. Must be absolute.")"
       SETUP_NFS_UPLOADS_SUBDIR="$(ask_input "Uploads subdir inside NFS mount" "$SETUP_NFS_UPLOADS_SUBDIR" "uploads" "Subfolder name only.")"
       SETUP_NFS_FSTAB_OPTIONS="$(ask_input "NFS fstab options" "$SETUP_NFS_FSTAB_OPTIONS" "vers=3,_netdev,nofail" "Mount options written to /etc/fstab.")"
       SETUP_NFS_UPLOADS_SUBDIR="$(printf "%s" "$SETUP_NFS_UPLOADS_SUBDIR" | sed 's#^/*##; s#/*$##')"
@@ -451,7 +451,7 @@ step_2_uploads_target() {
     fi
   else
     SETUP_NFS_UPLOADS_ENABLED="0"
-    UPLOADS_HOST_DIR="$(ask_input "UPLOADS_HOST_DIR (local path)" "$UPLOADS_HOST_DIR" "/opt/fjordshare-data/uploads" "Absolute local path for uploaded/shared files.")"
+    UPLOADS_HOST_DIR="$(ask_input "UPLOADS_HOST_DIR (local path)" "$UPLOADS_HOST_DIR" "/opt/fjord3d-data/uploads" "Absolute local path for uploaded/shared files.")"
     EXPECT_UPLOADS_FSTYPES=""
   fi
 }
@@ -459,8 +459,8 @@ step_2_uploads_target() {
 step_3_storage() {
   echo
   echo "Step 3/5: App data + thumbnails paths"
-  DATA_DIR="$(ask_input "DATA_DIR (DB + internal app state)" "$DATA_DIR" "/opt/fjordshare-data/appdata" "Should usually be local disk for SQLite stability.")"
-  THUMBS_HOST_DIR="$(ask_input "THUMBS_HOST_DIR (thumbnails)" "$THUMBS_HOST_DIR" "/opt/fjordshare-data/thumbs" "Local or NAS, your choice.")"
+  DATA_DIR="$(ask_input "DATA_DIR (DB + internal app state)" "$DATA_DIR" "/opt/fjord3d-data/appdata" "Should usually be local disk for SQLite stability.")"
+  THUMBS_HOST_DIR="$(ask_input "THUMBS_HOST_DIR (thumbnails)" "$THUMBS_HOST_DIR" "/opt/fjord3d-data/thumbs" "Local or NAS, your choice.")"
 }
 
 step_4_slicer() {
@@ -552,7 +552,7 @@ edit_menu() {
 }
 
 if [ "${1:-}" = "--start-only" ]; then
-  echo "==> FjordShare LXC start-only mode"
+  echo "==> Fjord3D LXC start-only mode"
   echo "    Repo: ${REPO_DIR}"
   echo "    Env : ${ENV_FILE}"
   if [ ! -f "$ENV_FILE" ]; then
@@ -573,7 +573,7 @@ if [ "${1:-}" != "" ]; then
   exit 1
 fi
 
-echo "==> FjordShare guided setup for LXC/NAS"
+echo "==> Fjord3D guided setup for LXC/NAS"
 echo "    Repo: ${REPO_DIR}"
 echo "    Env : ${ENV_FILE}"
 echo "    Tip : press Enter to use the default at each prompt."
@@ -585,9 +585,9 @@ echo "      4) Slicer defaults"
 echo "      5) Optional strict fs-type checks"
 echo "    Input examples:"
 echo "      - APP_PORT: 9090 or 9080"
-echo "      - DATA_DIR: /opt/fjordshare-data/appdata"
-echo "      - UPLOADS_HOST_DIR: /mnt/fjordshare-nfs/uploads"
-echo "      - NFS export: 10.10.0.161:/volume1/ProxmoxFjordshare"
+echo "      - DATA_DIR: /opt/fjord3d-data/appdata"
+echo "      - UPLOADS_HOST_DIR: /mnt/fjord3d-nfs/uploads"
+echo "      - NFS export: 10.10.0.161:/volume1/ProxmoxFjord3D"
 
 if [ ! -f "$EXAMPLE_ENV" ]; then
   echo "ERROR: Missing .env.example in repo root."

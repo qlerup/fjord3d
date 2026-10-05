@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-containers=("fjordshare")
-repos=("fjordshare-fjordshare")
+containers=("fjord3d")
+repos=("fjord3d-fjord3d")
 
 echo "=== Eksisterende mounts paa containere ==="
 for c in "${containers[@]}"; do
@@ -15,7 +15,7 @@ done
 
 echo
 echo "=== Matchende containere ==="
-docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep -E '^fjordshare$' || true
+docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep -E '^fjord3d$' || true
 
 echo
 echo "=== Matchende images ==="
@@ -25,11 +25,11 @@ done
 
 echo
 echo "=== Matchende volumes ==="
-docker volume ls --format '{{.Name}}' | grep '^fjordshare' || true
+docker volume ls --format '{{.Name}}' | grep '^fjord3d' || true
 
 echo
 echo "=== Matchende netvaerk ==="
-docker network ls --format '{{.Name}}' | grep '^fjordshare' || true
+docker network ls --format '{{.Name}}' | grep '^fjord3d' || true
 
 echo
 read -r -p "Slet ALT ovenstaaende og ryd ogsaa unused images/cache? [y/N] " reply
@@ -44,7 +44,7 @@ for c in "${containers[@]}"; do
 done
 
 echo
-echo "=== Sletter fjordshare-images ==="
+echo "=== Sletter fjord3d-images ==="
 for repo in "${repos[@]}"; do
   ids="$(docker image ls "$repo" -q | sort -u || true)"
   if [ -n "$ids" ]; then
@@ -53,15 +53,15 @@ for repo in "${repos[@]}"; do
 done
 
 echo
-echo "=== Sletter fjordshare-volumes ==="
-vols="$(docker volume ls --format '{{.Name}}' | grep '^fjordshare' || true)"
+echo "=== Sletter fjord3d-volumes ==="
+vols="$(docker volume ls --format '{{.Name}}' | grep '^fjord3d' || true)"
 if [ -n "$vols" ]; then
   echo "$vols" | xargs -r docker volume rm || true
 fi
 
 echo
-echo "=== Sletter fjordshare-netvaerk ==="
-nets="$(docker network ls --format '{{.Name}}' | grep '^fjordshare' || true)"
+echo "=== Sletter fjord3d-netvaerk ==="
+nets="$(docker network ls --format '{{.Name}}' | grep '^fjord3d' || true)"
 if [ -n "$nets" ]; then
   echo "$nets" | xargs -r docker network rm || true
 fi
