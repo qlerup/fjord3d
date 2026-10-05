@@ -1,12 +1,5 @@
-# Fjord3D logos
+# Fjord3D assets
 
-Put uploaded logo files in this folder.
-
-Recommended names:
-
-- `logo.png` - main logo
-- `logo-dark.png` - optional logo for dark backgrounds
-- `logo-square.png` - optional square/app icon version
-- `favicon.png` - optional browser icon source
-
-Supported formats should preferably be PNG, SVG, or WebP.
+All brand artwork now uses the approved standalone icon.
+See `branding/README.md` and `branding/exports.json` at the repository root for provenance and the complete export list.
+Rebuild with `python scripts/build_brand.py`.
