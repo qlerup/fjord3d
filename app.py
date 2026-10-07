@@ -16229,6 +16229,41 @@ def setup():
 
 
 LOGIN_CSRF_SESSION_KEY = "_login_csrf_token"
+LOGIN_MAX_FAILURES = 5
+LOGIN_WINDOW_SECONDS = 300
+LOGIN_FAILURES: dict[str, list[float]] = {}
+LOGIN_FAILURES_LOCK = threading.Lock()
+
+
+def _login_rate_key() -> str:
+    return str(request.remote_addr or "unknown")
+
+
+def _login_rate_limited() -> bool:
+    key, now = _login_rate_key(), time.monotonic()
+    with LOGIN_FAILURES_LOCK:
+        recent = [stamp for stamp in LOGIN_FAILURES.get(key, []) if now - stamp < LOGIN_WINDOW_SECONDS]
+        if recent:
+            LOGIN_FAILURES[key] = recent
+        else:
+            LOGIN_FAILURES.pop(key, None)
+        return len(recent) >= LOGIN_MAX_FAILURES
+
+
+def _record_login_failure() -> None:
+    key, now = _login_rate_key(), time.monotonic()
+    with LOGIN_FAILURES_LOCK:
+        recent = [stamp for stamp in LOGIN_FAILURES.get(key, []) if now - stamp < LOGIN_WINDOW_SECONDS]
+        if key not in LOGIN_FAILURES and len(LOGIN_FAILURES) >= 4096:
+            oldest = next(iter(LOGIN_FAILURES), None)
+            if oldest is not None:
+                LOGIN_FAILURES.pop(oldest, None)
+        LOGIN_FAILURES[key] = recent + [now]
+
+
+def _clear_login_failures() -> None:
+    with LOGIN_FAILURES_LOCK:
+        LOGIN_FAILURES.pop(_login_rate_key(), None)
 
 
 def _new_login_csrf_token() -> str:
@@ -16264,6 +16299,10 @@ def login():
             else:
                 username = str(request.form.get("username") or "").strip()
                 password = str(request.form.get("password") or "")
+                if _login_rate_limited():
+                    return render_template(
+                        "login.html", error="For mange mislykkede forsøg. Vent fem minutter.",
+                        created=created, csrf_token=csrf_token), 429
                 local_user = fetch_user_by_username(username)
                 if local_user is not None and not local_user.is_admin:
                     with closing(get_conn()) as conn:
@@ -16276,6 +16315,7 @@ def login():
                             prepare_user_daily_folders(local_user)
                         except Exception:
                             pass
+                        _clear_login_failures()
                         session.pop(LOGIN_CSRF_SESSION_KEY, None)
                         login_user(local_user)
                         return redirect(url_for("index"))
@@ -16292,9 +16332,11 @@ def login():
                         ensure_user_storage_ready(user)
                     except Exception:
                         pass
+                    _clear_login_failures()
                     session.pop(LOGIN_CSRF_SESSION_KEY, None)
                     login_user(user)
                     return redirect(url_for("index"))
+                _record_login_failure()
                 error = "Forkert brugernavn/kode eller ingen adgang til Fjord3D."
         return render_template("login.html", error=error, created=created, csrf_token=csrf_token)
     if users_count() == 0:
@@ -16317,8 +16359,13 @@ def login():
         else:
             username = str(request.form.get("username") or "").strip()
             password = str(request.form.get("password") or "")
+            if _login_rate_limited():
+                return render_template(
+                    "login.html", error="For mange mislykkede forsøg. Vent fem minutter.",
+                    created=created, csrf_token=csrf_token), 429
             user = fetch_user_by_username(username)
             if user is None:
+                _record_login_failure()
                 error = "Forkert brugernavn eller kode."
             else:
                 with closing(get_conn()) as conn:
@@ -16334,9 +16381,11 @@ def login():
                             prepare_user_daily_folders(user)
                     except Exception:
                         pass
+                    _clear_login_failures()
                     session.pop(LOGIN_CSRF_SESSION_KEY, None)
                     login_user(user)
                     return redirect(url_for("index"))
+                _record_login_failure()
                 error = "Forkert brugernavn eller kode."
 
     return render_template("login.html", error=error, created=created, csrf_token=csrf_token)
