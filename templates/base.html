@@ -18,6 +18,7 @@
   <meta name="msapplication-config" content="{{ url_for('static', filename='logos/web/browserconfig.xml', v='brand-20261005') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=app_build) }}">
   {% block head %}{% endblock %}
+<link rel="stylesheet" href="/static/hub-session.css?v=1"><script defer src="/static/hub-session.js?v=1"></script>
 </head>
 <body>
   {% block body %}{% endblock %}

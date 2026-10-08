@@ -16328,6 +16328,7 @@ def login():
                             "login.html", force_password_change=True, fpc_username=username,
                             fpc_current=password, csrf_token=csrf_token)
                     user = _ensure_managed_local_user(hub_user)
+                    session['hub_user_id'] = int(hub_user['id'])
                     try:
                         ensure_user_storage_ready(user)
                     except Exception:
@@ -16424,6 +16425,7 @@ def login_change_password():
     if not hub_user:
         return _fpc_response(str(result.get("error") or "Kunne ikke skifte adgangskoden."))
     user = _ensure_managed_local_user(hub_user)
+    session['hub_user_id'] = int(hub_user['id'])
     try:
         ensure_user_storage_ready(user)
     except Exception:
@@ -16568,6 +16570,7 @@ def hub_login():
         return redirect(url_for("login"))
     try:
         user = _ensure_managed_local_user(result)
+        session['hub_user_id'] = int(result['id'])
         ensure_user_storage_ready(user)
     except Exception:
         app.logger.exception("FjordHub SSO login failed")
@@ -23339,6 +23342,13 @@ try:
 except Exception as exc:
     print(f"[startup] thumbnail queue bootstrap skipped: {exc}", flush=True)
 
+
+
+
+from hub_session_guard import install as install_hub_session_guard
+app.extensions['hub_session_call'] = lambda *args, **kwargs: _hub_api(*args, **kwargs)
+install_hub_session_guard(app, managed=lambda: bool(_FJORDHUB_URL and _FJORDHUB_API_KEY),
+    subject=lambda: ({'id': session.get('hub_user_id'), 'username': current_user.username} if current_user.is_authenticated else None), revoke=logout_user)
 
 if __name__ == "__main__":
     port = int(str(os.getenv("APP_PORT", "8080")) or "8080")
