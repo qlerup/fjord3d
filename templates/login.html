@@ -35,6 +35,8 @@
   {% else %}
   <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token - Flask CSRF token is validated in app.py. -->
   <form class="login-card" method="post">
+{% if email_required %}<div class="auth-field"><label for="first-login-email">Email til din FjordHub-konto</label><input id="first-login-email" name="first_login_email" type="email" autocomplete="email" required autofocus value="{{ request.form.get('first_login_email', '') }}"></div>{% endif %}
+
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <img class="auth-logo" src="{{ url_for('static', filename='logos/logos/fjord3D-logo-horizontal-transparent.png', v='brand-20261005') }}" alt="Fjord3D">
     <h1>Log ind på Fjord3D</h1>
