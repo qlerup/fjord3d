@@ -38,6 +38,27 @@ migration aliases. Existing NAS folder names do not need to be changed.
   - Require visitor name
   - External DNS base URL
 
+### Print projects and production workflow
+
+- Submit selected models as print-ready projects, review project files and production metadata, and download project ZIPs or production-info PDFs.
+- Administrators track printed/unprinted files, attach production project files, complete/cancel projects, and review finished projects.
+- Merge draft/ready submissions belonging to the same user. Files, associated project assets and project-linked shares move to the target; distinct title parts combine with ` & `. Completed/cancelled or cross-user projects cannot be merged.
+- Optional GatewayAPI SMS setup/test and user phone-verification onboarding; SMS and MakerWorld credentials use their configured encryption keys.
+
+### Library organization, shipping and administration
+
+- Store external model-source links and per-file attachments; edit metadata individually or in batches and download selected files together.
+- Track printed state and organize presupported models through dedicated batch actions.
+- Administrators manage shipment records, extract tracking details from shipping labels, refresh status, assign shipments to users and create scoped tracking links. Users see their assigned tracking records; shared tracking views support refresh/translation through their token routes.
+- Profile-signup links collect requests for administrator approval/cancellation. Managed account access remains subject to Hub grants.
+- Logs and rejected-file-type reports support troubleshooting, alongside slicer job debug traces and thumbnail controls.
+
+### Shared FjordHub accounts
+
+Managed installations use Hub users, app permissions and single-use SSO. First-login email confirmation and temporary-password replacement can be completed in the app. Five-attempt lockout and active-session membership checks protect access. Removing a grant invalidates the session; a Hub outage blocks protected requests.
+
+Hub administrators can require a fresh email update. Opening or returning to an updated app shows a mandatory form for existing logins too. Saving a valid, unique address clears the shared requirement throughout the suite without replacing the account. Update Hub before Fjord3D, retaining the existing model/database mounts and migration aliases described above.
+
 ### 3D and preview
 
 - 3D thumbnails in the file grid for `.glb`, `.gltf`, `.stl`, `.obj`, `.step`, `.stp`, `.3mf`, `.lys`
@@ -165,18 +186,18 @@ for i in $(seq 0 255); do
   if [ "$existing" = "$target" ]; then
     source=$(printf '%s\n' "$line" | cut -d ' ' -f 2- | cut -d ',' -f 1)
     if [ "$source" = "$mount_source" ]; then
-      echo "Mount findes allerede paa mp$i; eksisterende indstillinger bevares."
+      echo "Mount already exists on mp$i; preserving existing settings."
       exit 0
     fi
-    echo "Mappen $target bruges allerede af et andet lager paa mp$i. Vaelg en anden mappesti."
+    echo "Directory $target is already used by another storage on mp$i. Choose a different target."
     exit 1
   fi
 done
 for i in $(seq 0 255); do
   if ! printf '%s\n' "$config" | grep -q "^mp$i:"; then slot="mp$i"; break; fi
 done
-[ -n "$slot" ] || { echo 'Ingen ledige mountpladser i LXC.'; exit 1; }
-echo "Tilfoejer mount paa $slot"
+[ -n "$slot" ] || { echo 'No unused mount slots in the LXC.'; exit 1; }
+echo "Adding mount on $slot"
 pct set "$ctid" "-$slot" "$mount_source,mp=$target"
 pct reboot "$ctid"
 FJORDHUB_NFS_LXC
